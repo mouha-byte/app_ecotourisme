@@ -1,16 +1,221 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ecoguide/utils/app_theme.dart';
 import 'package:ecoguide/screens/login_screen.dart';
 import 'package:ecoguide/screens/admin/admin_dashboard_screen.dart';
+import 'package:ecoguide/services/offline_map_service.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final OfflineMapService _offlineMapService = OfflineMapService();
+  bool _isDownloading = false;
+  double _downloadProgress = 0;
+  String _cacheSize = '0 B';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCacheSize();
+  }
+
+  Future<void> _loadCacheSize() async {
+    final size = await _offlineMapService.getFormattedCacheSize();
+    if (mounted) {
+      setState(() => _cacheSize = size);
+    }
+  }
+
+  Future<void> _showDownloadMapDialog() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final totalTiles = _offlineMapService.calculateTileCount();
+
+    showDialog(
+      context: context,
+      barrierDismissible: !_isDownloading,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: isDark ? AppTheme.cardDark : Colors.white,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Icon(Icons.download_for_offline, color: AppTheme.primaryGreen),
+                const SizedBox(width: 12),
+                Text(
+                  'Carte Hors-Ligne',
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Téléchargez la carte de la Tunisie pour utiliser l\'application sans connexion internet.',
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Cache actuel:',
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.grey.shade600,
+                      ),
+                    ),
+                    Text(
+                      _cacheSize,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Tuiles à télécharger:',
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.grey.shade600,
+                      ),
+                    ),
+                    Text(
+                      '$totalTiles',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                if (_isDownloading) ...[
+                  const SizedBox(height: 20),
+                  LinearProgressIndicator(
+                    value: _downloadProgress,
+                    backgroundColor: isDark ? Colors.white12 : Colors.grey.shade200,
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppTheme.primaryGreen),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${(_downloadProgress * 100).toStringAsFixed(1)}%',
+                    style: TextStyle(
+                      color: isDark ? Colors.white70 : Colors.grey.shade600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              if (!_isDownloading) ...[
+                TextButton(
+                  onPressed: () async {
+                    await _offlineMapService.clearCache();
+                    await _loadCacheSize();
+                    if (mounted) {
+                      setDialogState(() {});
+                    }
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Cache supprimé')),
+                      );
+                    }
+                  },
+                  child: Text(
+                    'Vider le cache',
+                    style: TextStyle(color: AppTheme.error),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Annuler',
+                    style: TextStyle(
+                      color: isDark ? Colors.white60 : Colors.grey,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    setState(() {
+                      _isDownloading = true;
+                      _downloadProgress = 0;
+                    });
+                    setDialogState(() {});
+
+                    await _offlineMapService.downloadTunisiaTiles(
+                      onProgress: (downloaded, total) {
+                        if (mounted) {
+                          setState(() {
+                            _downloadProgress = downloaded / total;
+                          });
+                          setDialogState(() {});
+                        }
+                      },
+                    );
+
+                    await _loadCacheSize();
+
+                    if (mounted) {
+                      setState(() => _isDownloading = false);
+                      setDialogState(() {});
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Carte téléchargée avec succès!'),
+                          backgroundColor: AppTheme.success,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryGreen,
+                  ),
+                  child: const Text(
+                    'Télécharger',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ] else ...[
+                TextButton(
+                  onPressed: null,
+                  child: Text(
+                    'Téléchargement en cours...',
+                    style: TextStyle(
+                      color: isDark ? Colors.white38 : Colors.grey.shade400,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Demo: Not logged in state
-    final bool isLoggedIn = false;
-    final bool isAdmin = false;
+    // Get current user from Firebase Auth
+    final user = FirebaseAuth.instance.currentUser;
+    final bool isLoggedIn = user != null;
+    // temporary check ensures code is reachable; replace with real logic later
+    final bool isAdmin = (user?.email ?? '').contains('admin'); // TODO: Implement admin check from Firestore
 
     if (!isLoggedIn) {
       return Scaffold(
@@ -79,7 +284,8 @@ class ProfileScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const LoginScreen(isRegister: true),
+                          builder: (context) =>
+                              const LoginScreen(isRegister: true),
                         ),
                       );
                     },
@@ -122,29 +328,34 @@ class ProfileScreen extends StatelessWidget {
                   CircleAvatar(
                     radius: 40,
                     backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.person,
-                      size: 40,
-                      color: AppTheme.primaryGreen,
-                    ),
+                    backgroundImage: user.photoURL != null
+                        ? NetworkImage(user.photoURL!)
+                        : null,
+                    child: user.photoURL == null
+                        ? Icon(
+                            Icons.person,
+                            size: 40,
+                            color: AppTheme.primaryGreen,
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Jean Dupont',
-                          style: TextStyle(
+                          user.displayName ?? 'Utilisateur',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          'jean.dupont@email.com',
-                          style: TextStyle(
+                          user.email ?? '',
+                          style: const TextStyle(
                             color: Colors.white70,
                           ),
                         ),
@@ -165,13 +376,12 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child:
-                      _buildStatCard('Itinéraires', '5', Icons.route),
+                  child: _buildStatCard('Itinéraires', '5', Icons.route),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child:
-                      _buildStatCard('Réservations', '3', Icons.calendar_today),
+                  child: _buildStatCard(
+                      'Réservations', '3', Icons.calendar_today),
                 ),
               ],
             ),
@@ -181,6 +391,11 @@ class ProfileScreen extends StatelessWidget {
             // Menu Items
             _buildMenuItem(Icons.favorite, 'Sites favoris', () {}),
             _buildMenuItem(Icons.history, 'Historique', () {}),
+            _buildMenuItem(
+              Icons.download_for_offline,
+              'Télécharger la carte',
+              _showDownloadMapDialog,
+            ),
             _buildMenuItem(Icons.notifications, 'Notifications', () {}),
             _buildMenuItem(Icons.help, 'Aide & FAQ', () {}),
             _buildMenuItem(Icons.info, 'À propos', () {}),
@@ -206,10 +421,13 @@ class ProfileScreen extends StatelessWidget {
             _buildMenuItem(
               Icons.logout,
               'Déconnexion',
-              () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Déconnexion...')),
-                );
+              () async {
+                await FirebaseAuth.instance.signOut();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Déconnexion réussie')),
+                  );
+                }
               },
               color: AppTheme.error,
             ),
