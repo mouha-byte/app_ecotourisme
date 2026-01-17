@@ -28,7 +28,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       icon: Icons.route,
       title: 'Planifiez vos Itinéraires',
       description:
-          'Créez des itinéraires personnalisés avec notre assistant IA. Recevez des recommandations basées sur vos préférences.',
+          'Créez des itinéraires personnalisés avec notre assistant IA. ',
       color: AppTheme.accentBlue,
     ),
     OnboardingPage(

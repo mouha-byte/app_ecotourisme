@@ -51,16 +51,26 @@ class ItineraryDetailsScreen extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 itinerary.imageUrl.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: itinerary.imageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) =>
-                            Container(color: Colors.grey.shade200),
-                        errorWidget: (_, __, ___) => Container(
-                          color: Colors.grey.shade200,
-                          child: const Icon(Icons.route, size: 80),
-                        ),
-                      )
+                    ? (itinerary.imageUrl.startsWith('http')
+                        ? CachedNetworkImage(
+                            imageUrl: itinerary.imageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) =>
+                                Container(color: Colors.grey.shade200),
+                            errorWidget: (_, __, ___) => Container(
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.route, size: 80),
+                            ),
+                          )
+                        : Image.asset(
+                            itinerary.imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.route, size: 80),
+                            ),
+                          ))
                     : Container(
                         color: Colors.grey.shade200,
                         child: const Icon(Icons.route, size: 80),

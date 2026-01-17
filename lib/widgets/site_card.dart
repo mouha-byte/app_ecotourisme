@@ -50,20 +50,30 @@ class SiteCard extends StatelessWidget {
                   height: 150,
                   width: double.infinity,
                   child: site.photos.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: site.photos.first,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: Colors.grey.shade200,
-                            child: const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            color: Colors.grey.shade200,
-                            child: const Icon(Icons.landscape, size: 50),
-                          ),
-                        )
+                      ? (site.photos.first.startsWith('http')
+                          ? CachedNetworkImage(
+                              imageUrl: site.photos.first,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: Colors.grey.shade200,
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => Container(
+                                color: Colors.grey.shade200,
+                                child: const Icon(Icons.landscape, size: 50),
+                              ),
+                            )
+                          : Image.asset(
+                              site.photos.first,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                color: Colors.grey.shade200,
+                                child: const Icon(Icons.landscape, size: 50),
+                              ),
+                            ))
                       : Container(
                           color: Colors.grey.shade200,
                           child: const Icon(Icons.landscape, size: 50),
@@ -220,17 +230,26 @@ class SiteCardCompact extends StatelessWidget {
             width: 60,
             height: 60,
             child: site.photos.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: site.photos.first,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Colors.grey.shade200,
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: Colors.grey.shade200,
-                      child: const Icon(Icons.landscape),
-                    ),
-                  )
+                ? (site.photos.first.startsWith('http')
+                    ? CachedNetworkImage(
+                        imageUrl: site.photos.first,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey.shade200,
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.landscape),
+                        ),
+                      )
+                    : Image.asset(
+                        site.photos.first,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.landscape),
+                        ),
+                      ))
                 : Container(
                     color: Colors.grey.shade200,
                     child: const Icon(Icons.landscape),

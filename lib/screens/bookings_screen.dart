@@ -112,12 +112,19 @@ class _BookingsScreenState extends State<BookingsScreen>
                   height: 80,
                   color: Colors.grey.shade200,
                   child: activity.imageUrl.isNotEmpty
-                      ? Image.network(
-                          activity.imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.image, size: 40),
-                        )
+                      ? (activity.imageUrl.startsWith('http')
+                          ? Image.network(
+                              activity.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  const Icon(Icons.image, size: 40),
+                            )
+                          : Image.asset(
+                              activity.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  const Icon(Icons.image, size: 40),
+                            ))
                       : Icon(
                           activity.type == 'accommodation'
                               ? Icons.hotel

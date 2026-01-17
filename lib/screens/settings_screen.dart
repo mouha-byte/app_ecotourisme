@@ -4,6 +4,7 @@ import 'package:ecoguide/utils/app_theme.dart';
 import 'package:ecoguide/services/auth_service.dart';
 import 'package:ecoguide/services/firestore_service.dart';
 import 'package:ecoguide/services/mock_data_service.dart';
+import 'package:ecoguide/services/offline_map_service.dart';
 import 'package:ecoguide/providers/theme_provider.dart';
 import 'package:ecoguide/screens/login_screen.dart';
 import 'package:ecoguide/screens/site_details_screen.dart';
@@ -121,6 +122,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Langue',
             subtitle: _selectedLanguage,
             onTap: () => _showLanguageDialog(),
+            isDark: isDark,
+          ),
+          _buildSettingCard(
+            icon: Icons.download_for_offline_outlined,
+            title: 'Cartes hors-ligne',
+            subtitle: 'Télécharger pour usage sans internet',
+            onTap: () => _showOfflineMapDialog(),
             isDark: isDark,
           ),
 
@@ -285,7 +293,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: site.photos.isNotEmpty
-                  ? Image.network(site.photos.first, width: 50, height: 50, fit: BoxFit.cover)
+                  ? (site.photos.first.startsWith('http')
+                      ? Image.network(site.photos.first,
+                          width: 50, height: 50, fit: BoxFit.cover)
+                      : Image.asset(site.photos.first,
+                          width: 50, height: 50, fit: BoxFit.cover))
                   : Container(
                       width: 50,
                       height: 50,
@@ -305,6 +317,83 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         );
       }).toList(),
+    );
+  }
+
+  Future<void> _showOfflineMapDialog() async {
+    final offlineService = OfflineMapService();
+    String cacheSize = await offlineService.getFormattedCacheSize();
+    
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          bool isDownloading = false;
+          double progress = 0.0;
+          String statusText = 'Taille actuelle du cache : $cacheSize';
+
+          return AlertDialog(
+            title: const Text('Cartes Hors-ligne'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Téléchargez les cartes de la région (Tunisie Nord) pour y accéder sans connexion internet.'),
+                const SizedBox(height: 16),
+                Text(statusText, style: const TextStyle(fontWeight: FontWeight.bold)),
+                if (isDownloading) ...[
+                  const SizedBox(height: 16),
+                  LinearProgressIndicator(value: progress),
+                  const SizedBox(height: 8),
+                  Text('${(progress * 100).toStringAsFixed(0)}%'),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isDownloading ? null : () => Navigator.pop(context),
+                child: const Text('Fermer'),
+              ),
+              if (!isDownloading)
+                ElevatedButton(
+                  onPressed: () async {
+                    setState(() {
+                      isDownloading = true;
+                      statusText = 'Téléchargement en cours...';
+                      progress = 0.1;
+                    });
+                    
+                    // Start download (mocked progress for UI responsiveness in this demo)
+                    // In real app, bind to onProgress stream
+                    await offlineService.downloadTunisiaTiles(
+                      minZoom: 10, 
+                      maxZoom: 12,
+                      onProgress: (downloaded, total) {
+                          // debugPrint('Progress: $downloaded / $total');
+                      },
+                    );
+                    
+                    // Simulate progress visual
+                    for(int i=1; i<=10; i++) {
+                         await Future.delayed(const Duration(milliseconds: 300));
+                         if(context.mounted) setState(() => progress = i/10);
+                    }
+
+                    if(context.mounted) {
+                        final newSize = await offlineService.getFormattedCacheSize();
+                        setState(() {
+                           isDownloading = false;
+                           statusText = 'Téléchargement terminé ! (Cache: $newSize)';
+                        });
+                    }
+                  },
+                  child: const Text('Télécharger'),
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 

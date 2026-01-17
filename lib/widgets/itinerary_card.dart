@@ -53,20 +53,30 @@ class ItineraryCard extends StatelessWidget {
                   height: 120,
                   width: double.infinity,
                   child: itinerary.imageUrl.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: itinerary.imageUrl,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: Colors.grey.shade200,
-                            child: const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            color: Colors.grey.shade200,
-                            child: const Icon(Icons.route, size: 50),
-                          ),
-                        )
+                      ? (itinerary.imageUrl.startsWith('http')
+                          ? CachedNetworkImage(
+                              imageUrl: itinerary.imageUrl,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: Colors.grey.shade200,
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => Container(
+                                color: Colors.grey.shade200,
+                                child: const Icon(Icons.route, size: 50),
+                              ),
+                            )
+                          : Image.asset(
+                              itinerary.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                color: Colors.grey.shade200,
+                                child: const Icon(Icons.route, size: 50),
+                              ),
+                            ))
                       : Container(
                           color: Colors.grey.shade200,
                           child: const Icon(Icons.route, size: 50),

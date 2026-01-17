@@ -19,6 +19,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:ecoguide/services/weather_service.dart';
 import 'package:ecoguide/services/location_service.dart';
 import 'package:ecoguide/widgets/ai_assistant_chat.dart';
+import 'package:ecoguide/screens/quiz_list_screen.dart';
+import 'package:ecoguide/widgets/sos_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -239,6 +241,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           child: _buildEcoTipsSection(),
         ),
 
+        // Education & Quiz Section
+        SliverToBoxAdapter(
+          child: _buildEducationSection(),
+        ),
+
         // Itineraries
         SliverToBoxAdapter(
           child: _buildItinerariesSection(),
@@ -341,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               colors: [Colors.white, Color(0xFFE0F2E9)],
                             ).createShader(bounds),
                             child: const Text(
-                              'EcoGuide',
+                              'EcoTourism',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 36,
@@ -370,10 +377,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                       Row(
                         children: [
-                          _buildHeaderIcon(Icons.search_rounded, _onSearchTap),
-                          const SizedBox(width: 10),
                           _buildHeaderIcon(Icons.share_rounded, _onShareTap),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 6),
+                          const SOSButton(), // SOS Button
+                          const SizedBox(width: 6),
                           Stack(
                             children: [
                               _buildHeaderIcon(Icons.notifications_rounded, _onNotificationTap),
@@ -839,10 +846,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       height: 160,
                       width: double.infinity,
                       child: site.photos.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: site.photos.first,
-                              fit: BoxFit.cover,
-                            )
+                          ? (site.photos.first.startsWith('http')
+                              ? CachedNetworkImage(
+                                  imageUrl: site.photos.first,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.asset(
+                                  site.photos.first,
+                                  fit: BoxFit.cover,
+                                ))
                           : Container(color: Colors.grey.shade200),
                     ),
                   ),
@@ -1082,6 +1094,120 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildEducationSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Éducation & Jeux',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const QuizListScreen()),
+                  );
+                },
+                child: Row(
+                    children: [
+                    Text(
+                        'Voir tout',
+                        style: TextStyle(
+                        color: AppTheme.primaryGreen,
+                        fontWeight: FontWeight.w600,
+                        ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_forward, size: 18, color: AppTheme.primaryGreen),
+                    ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const QuizListScreen()),
+              );
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              height: 140,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                image: const DecorationImage(
+                  image: AssetImage('assets/images/quiz_cover.png'),
+                  fit: BoxFit.cover,
+                ),
+                boxShadow: AppTheme.softShadow,
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                  ),
+                ),
+                padding: const EdgeInsets.all(16),
+                alignment: Alignment.bottomLeft,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.success,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'NOUVEAU',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Testez vos connaissances !',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Text(
+                      'Participez à nos quiz nature et gagnez des points éco.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

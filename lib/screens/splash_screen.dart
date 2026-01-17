@@ -74,29 +74,29 @@ class _SplashScreenState extends State<SplashScreen>
                   children: [
                     // Logo Container
                     Container(
-                      width: 120,
-                      height: 120,
+                      width: 180,
+                      height: 180,
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        gradient: AppTheme.primaryGradient,
-                        borderRadius: BorderRadius.circular(28),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(40),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryGreen.withOpacity(0.4),
+                            color: Colors.black.withOpacity(0.1),
                             blurRadius: 30,
                             offset: const Offset(0, 15),
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.eco,
-                        size: 70,
-                        color: Colors.white,
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.contain,
                       ),
                     ),
                     const SizedBox(height: 32),
                     // App Name
                     Text(
-                      'EcoGuide',
+                      'Ecotourisme',
                       style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.bold,

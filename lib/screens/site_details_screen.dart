@@ -140,10 +140,15 @@ class _SiteDetailsScreenState extends State<SiteDetailsScreen>
                 children: [
                   // Image
                   widget.site.photos.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: widget.site.photos.first,
-                          fit: BoxFit.cover,
-                        )
+                      ? (widget.site.photos.first.startsWith('http')
+                          ? CachedNetworkImage(
+                              imageUrl: widget.site.photos.first,
+                              fit: BoxFit.cover,
+                            )
+                          : Image.asset(
+                              widget.site.photos.first,
+                              fit: BoxFit.cover,
+                            ))
                       : Container(color: AppTheme.primaryGreen),
                   // Gradient
                   Container(
