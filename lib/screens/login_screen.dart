@@ -82,23 +82,23 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   child: Hero(
                     tag: 'app_logo',
                     child: Container(
-                      width: 100,
-                      height: 100,
+                      width: 120,
+                      height: 120,
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        gradient: AppTheme.primaryGradient,
-                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryGreen.withOpacity(0.3),
+                            color: Colors.black.withOpacity(0.1),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.eco,
-                        size: 60,
-                        color: Colors.white,
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),

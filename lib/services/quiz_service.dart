@@ -29,7 +29,7 @@ class QuizService {
       ),
       Quiz(
         id: '2',
-        title: 'Les Bons Gestes Éco-Responsables',
+        title: 'Les Bons Gestes ',
         description: 'Savez-vous comment minimiser votre impact lors d\'une randonnée ?',
         imageUrl: 'assets/images/quiz_cover.png',
         difficulty: 'Moyen',

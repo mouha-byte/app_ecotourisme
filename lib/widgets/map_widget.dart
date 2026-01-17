@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -6,6 +7,7 @@ import 'package:ecoguide/utils/app_theme.dart';
 import 'package:ecoguide/utils/constants.dart';
 import 'package:ecoguide/services/location_service.dart';
 import 'package:location/location.dart';
+import 'package:path_provider/path_provider.dart';
 
 class MapWidget extends StatefulWidget {
   final List<Site> sites;
@@ -34,12 +36,25 @@ class _MapWidgetState extends State<MapWidget> {
   final LocationService _locationService = LocationService();
   LocationData? _currentPosition;
   bool _isLoadingLocation = false;
+  String? _tilesPath;
 
   @override
   void initState() {
     super.initState();
+    _loadTilesPath();
     if (widget.showUserLocation) {
       _loadCurrentLocation();
+    }
+  }
+
+  Future<void> _loadTilesPath() async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      setState(() {
+        _tilesPath = '${appDir.path}/map_tiles';
+      });
+    } catch (e) {
+      // Ignore
     }
   }
 
@@ -111,10 +126,13 @@ class _MapWidgetState extends State<MapWidget> {
             maxZoom: AppConstants.maxZoom,
           ),
           children: [
-            // OpenStreetMap tiles
+            // OpenStreetMap tiles with offline fallback
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.ecoguide.app',
+              tileProvider: _tilesPath != null 
+                  ? HybridTileProvider(tilesPath: _tilesPath!)
+                  : null, // Defaults to NetworkTileProvider
             ),
             // Route polyline
             if (widget.routePoints != null && widget.routePoints!.isNotEmpty)
@@ -209,5 +227,34 @@ class _MapWidgetState extends State<MapWidget> {
           ),
       ],
     );
+  }
+}
+
+class HybridTileProvider extends TileProvider {
+  final String tilesPath;
+
+  HybridTileProvider({required this.tilesPath});
+
+  @override
+  ImageProvider getImage(TileCoordinates coordinates, TileLayer options) {
+    final z = coordinates.z;
+    final x = coordinates.x;
+    final y = coordinates.y;
+    
+    // Check local file
+    final path = '$tilesPath/$z/$x/$y.png';
+    final file = File(path);
+    
+    if (file.existsSync()) {
+      return FileImage(file);
+    }
+    
+    // Fallback to network
+    final url = options.urlTemplate!
+        .replaceAll('{z}', z.toString())
+        .replaceAll('{x}', x.toString())
+        .replaceAll('{y}', y.toString());
+        
+    return NetworkImage(url);
   }
 }

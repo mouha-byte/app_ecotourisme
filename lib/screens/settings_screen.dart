@@ -360,32 +360,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onPressed: () async {
                     setState(() {
                       isDownloading = true;
-                      statusText = 'Téléchargement en cours...';
-                      progress = 0.1;
+                      statusText = 'Démarrage du téléchargement...';
+                      progress = 0.0;
                     });
                     
-                    // Start download (mocked progress for UI responsiveness in this demo)
-                    // In real app, bind to onProgress stream
-                    await offlineService.downloadTunisiaTiles(
+                    final success = await offlineService.downloadTunisiaTiles(
                       minZoom: 10, 
                       maxZoom: 12,
                       onProgress: (downloaded, total) {
-                          // debugPrint('Progress: $downloaded / $total');
+                        if (context.mounted) {
+                          setState(() {
+                            progress = downloaded / total;
+                            statusText = 'Téléchargement: ${(progress * 100).toStringAsFixed(1)}%';
+                          });
+                        }
                       },
                     );
-                    
-                    // Simulate progress visual
-                    for(int i=1; i<=10; i++) {
-                         await Future.delayed(const Duration(milliseconds: 300));
-                         if(context.mounted) setState(() => progress = i/10);
-                    }
 
                     if(context.mounted) {
-                        final newSize = await offlineService.getFormattedCacheSize();
-                        setState(() {
-                           isDownloading = false;
-                           statusText = 'Téléchargement terminé ! (Cache: $newSize)';
-                        });
+                      final newSize = await offlineService.getFormattedCacheSize();
+                      setState(() {
+                         isDownloading = false;
+                         statusText = success 
+                             ? 'Téléchargement terminé ! (Cache: $newSize)' 
+                             : 'Erreur lors du téléchargement';
+                         if (success) progress = 1.0;
+                      });
                     }
                   },
                   child: const Text('Télécharger'),

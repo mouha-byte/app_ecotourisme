@@ -348,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               colors: [Colors.white, Color(0xFFE0F2E9)],
                             ).createShader(bounds),
                             child: const Text(
-                              'EcoTourism',
+                              'Sylvagri',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 36,
